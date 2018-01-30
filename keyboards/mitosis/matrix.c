@@ -86,21 +86,24 @@ uint8_t matrix_scan(void)
     SERIAL_UART_INIT();
 
     uint32_t timeout = 0;
+    //static uint8_t lrssi = 0, rrssi = 0;
 
     //the s character requests the RF slave to send the matrix
     SERIAL_UART_DATA = 's';
 
+#define RX_SIZE (10 + 8 + 1)
     //trust the external keystates entirely, erase the last data
-    uint8_t uart_data[11] = {0};
+    uint8_t uart_data[RX_SIZE] = {0};
 
     //there are 10 bytes corresponding to 10 columns, and an end byte
-    for (uint8_t i = 0; i < 11; i++) {
+    for (uint8_t i = 0; i < RX_SIZE; i++) {
         //wait for the serial data, timeout if it's been too long
         //this only happened in testing with a loose wire, but does no
         //harm to leave it in here
         while(!SERIAL_UART_RXD_PRESENT){
             timeout++;
             if (timeout > 10000){
+		//uprintln("timeout");
                 break;
             }
         } 
@@ -109,12 +112,25 @@ uint8_t matrix_scan(void)
 
     //check for the end packet, the key state bytes use the LSBs, so 0xE0
     //will only show up here if the correct bytes were recieved
-    if (uart_data[10] == 0xE0)
+    if (uart_data[RX_SIZE - 1] == 0xE0)
     {
         //shifting and transferring the keystates to the QMK matrix variable
         for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
             matrix[i] = (uint16_t) uart_data[i*2] | (uint16_t) uart_data[i*2+1] << 5;
         }
+#if 0
+	if (lrssi != uart_data[10] || rrssi != uart_data[12]) {
+	    lrssi = uart_data[10];
+	    rrssi = uart_data[12];
+	    uprintf("rssi -%ddb -%ddb\tprev retr: %d %d\tprev hops: %d %d\r\n",
+			    0xff - lrssi, 0xff - rrssi,
+			    uart_data[14], uart_data[16],
+			    uart_data[15], uart_data[17]);
+	}
+#endif
+    }
+    else {
+	    //uprintln("no end packet");
     }
 
 
