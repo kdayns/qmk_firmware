@@ -41,6 +41,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define ONESHOT_TIMEOUT 500
 
+#define RSPC_KEY KC_SPC
+#define TAPPING_TERM 200
+
 
 /* key combination for command */
 #define IS_COMMAND() ( \
